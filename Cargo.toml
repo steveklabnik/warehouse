@@ -5,3 +5,4 @@ authors = ["Steve Klabnik <steve@steveklabnik.com>"]
 
 [dependencies]
 iron = "0.1.21"
+router = "0.0.14"
