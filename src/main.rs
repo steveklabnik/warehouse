@@ -12,9 +12,59 @@ use serde_json::Value;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::collections::BTreeMap;
 
-struct TotallyNotADatabase(BTreeMap<String, serde_json::value::Value>);
+/*
+{
+  "name": "iron",
+  "vers": "0.0.2",
+  "deps": [
+    {
+      "name": "error",
+      "req": "*",
+      "features": [
+        ""
+      ],
+      "optional": false,
+      "default_features": true,
+      "target": null,
+      "kind": "normal"
+    },
+  ],
+  "cksum": "af0250cc6225932a7a3ce711481c0ec15cc1fcc474e28bc997ba54dcdb087da0",
+  "features": {
+    
+  },
+  "yanked": false
+}
+*/
+
+struct TotallyNotADatabase(Crate);
+
+#[derive(Debug)]
+struct Crate {
+    id: String,
+    version: String,
+    checksum: String,
+    yanked: bool,
+}
+
+impl Crate {
+    fn from_value(v: Value) -> Crate {
+        let obj = v.as_object().unwrap();
+
+        let id = obj.get("name").unwrap().as_string().unwrap().to_string();
+        let version = obj.get("vers").unwrap().as_string().unwrap().to_string();
+        let checksum = obj.get("cksum").unwrap().as_string().unwrap().to_string();
+        let yanked = obj.get("yanked").unwrap().as_boolean().unwrap();
+
+        Crate {
+            id: id,
+            version: version,
+            checksum: checksum,
+            yanked: yanked,
+        }
+    }
+}
 
 lazy_static! {
     static ref STORE: TotallyNotADatabase = {
@@ -25,9 +75,8 @@ lazy_static! {
         reader.read_line(&mut line).unwrap();
 
         let data: Value = serde_json::from_str(&line).unwrap();
-        let obj = data.as_object().unwrap();
         
-        TotallyNotADatabase(obj.to_owned())
+        TotallyNotADatabase(Crate::from_value(data))
     };
 }
 
