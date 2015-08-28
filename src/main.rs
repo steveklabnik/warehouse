@@ -41,6 +41,30 @@ use std::collections::BTreeMap;
 
 struct TotallyNotADatabase(BTreeMap<String, Crate>);
 
+impl TotallyNotADatabase {
+    fn from_path(p: &str) -> TotallyNotADatabase {
+        let f = File::open(p).unwrap();
+        let mut reader = BufReader::new(f);
+
+        let mut line = String::new();
+        reader.read_line(&mut line).unwrap();
+
+        let data: Value = serde_json::from_str(&line).unwrap();
+
+        let mut iron = Crate { id: String::from("iron"), versions: BTreeMap::new() };
+
+        let version = Version::from_value(data);
+
+        iron.add_version(version);
+
+        let mut db = BTreeMap::new();
+
+        db.insert(String::from("iron"), iron);
+        
+        TotallyNotADatabase(db)
+    }
+}
+
 #[derive(Debug)]
 struct Crate {
     id: String,
@@ -82,25 +106,7 @@ impl Version {
 
 lazy_static! {
     static ref STORE: TotallyNotADatabase = {
-        let f = File::open("crates.io-index/ir/on/iron").unwrap();
-        let mut reader = BufReader::new(f);
-
-        let mut line = String::new();
-        reader.read_line(&mut line).unwrap();
-
-        let data: Value = serde_json::from_str(&line).unwrap();
-
-        let mut iron = Crate { id: String::from("iron"), versions: BTreeMap::new() };
-
-        let version = Version::from_value(data);
-
-        iron.add_version(version);
-
-        let mut db = BTreeMap::new();
-
-        db.insert(String::from("iron"), iron);
-        
-        TotallyNotADatabase(db)
+        TotallyNotADatabase::from_path("crates.io-index/ir/on/iron")
     };
 }
 
