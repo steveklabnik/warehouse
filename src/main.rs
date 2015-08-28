@@ -18,6 +18,12 @@ fn main() {
 }
 
 fn index(_: &mut Request) -> IronResult<Response> {
+    let index = "{\"crates\": \"/crates\"}";
+
+    Ok(Response::with((status::Ok, String::from(index))))
+}
+
+fn crates(_: &mut Request) -> IronResult<Response> {
     let f = File::open("crates.io-index/ir/on/iron").unwrap();
     let mut reader = BufReader::new(f);
 
