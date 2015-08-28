@@ -8,11 +8,12 @@ extern crate lazy_static;
 use router::Router;
 use iron::prelude::*;
 use iron::status;
-use serde_json::Value;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::collections::BTreeMap;
+
+mod totally_not_a_database;
+mod krate;
+mod version;
+
+use totally_not_a_database::TotallyNotADatabase;
 
 /*
 {
@@ -38,71 +39,6 @@ use std::collections::BTreeMap;
   "yanked": false
 }
 */
-
-struct TotallyNotADatabase(BTreeMap<String, Crate>);
-
-impl TotallyNotADatabase {
-    fn from_path(p: &str) -> TotallyNotADatabase {
-        let f = File::open(p).unwrap();
-        let mut reader = BufReader::new(f);
-
-        let mut line = String::new();
-        reader.read_line(&mut line).unwrap();
-
-        let data: Value = serde_json::from_str(&line).unwrap();
-
-        let mut iron = Crate { id: String::from("iron"), versions: BTreeMap::new() };
-
-        let version = Version::from_value(data);
-
-        iron.add_version(version);
-
-        let mut db = BTreeMap::new();
-
-        db.insert(String::from("iron"), iron);
-        
-        TotallyNotADatabase(db)
-    }
-}
-
-#[derive(Debug)]
-struct Crate {
-    id: String,
-    versions: BTreeMap<String, Version>,
-}
-
-impl Crate {
-    fn add_version(&mut self, v: Version) {
-        let name = v.id.clone();
-        self.versions.insert(name, v);
-    }
-}
-
-#[derive(Debug)]
-struct Version {
-    id: String,
-    crate_id: String,
-    checksum: String,
-    yanked: bool,
-}
-
-impl Version {
-    fn from_value(v: Value) -> Version {
-        let obj = v.as_object().unwrap();
-
-        let id = obj.get("vers").unwrap().as_string().unwrap().to_string();
-        let crate_id = obj.get("name").unwrap().as_string().unwrap().to_string();
-        let checksum = obj.get("cksum").unwrap().as_string().unwrap().to_string();
-        let yanked = obj.get("yanked").unwrap().as_boolean().unwrap();
-
-        Version {
-            id: id,
-            crate_id: crate_id,
-            checksum: checksum,
-            yanked: yanked,
-        }
-    }
-}
 
 lazy_static! {
     static ref STORE: TotallyNotADatabase = {
