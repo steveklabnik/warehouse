@@ -15,31 +15,6 @@ mod version;
 
 use totally_not_a_database::TotallyNotADatabase;
 
-/*
-{
-  "name": "iron",
-  "vers": "0.0.2",
-  "deps": [
-    {
-      "name": "error",
-      "req": "*",
-      "features": [
-        ""
-      ],
-      "optional": false,
-      "default_features": true,
-      "target": null,
-      "kind": "normal"
-    },
-  ],
-  "cksum": "af0250cc6225932a7a3ce711481c0ec15cc1fcc474e28bc997ba54dcdb087da0",
-  "features": {
-    
-  },
-  "yanked": false
-}
-*/
-
 lazy_static! {
     static ref STORE: TotallyNotADatabase = {
         TotallyNotADatabase::from_path("crates.io-index/ir/on/iron")
@@ -65,7 +40,11 @@ fn crates(_: &mut Request) -> IronResult<Response> {
     let mut json = String::from("{\"data\":[");
 
     let crates = data.iter().map(|(_, krate)| {
-        format!("{{\"id\": \"{}\", \"type\":\"crate\"}}", krate.id)
+        let versions = krate.versions.iter().map(|(_, v)| {
+            format!("{{\"type\": \"version\",\"id\": \"{}\"}}", v.id)
+        }).collect::<Vec<_>>().join(",");
+
+        format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, versions)
     }).collect::<Vec<String>>().join(",");
 
     json.push_str(&crates);
