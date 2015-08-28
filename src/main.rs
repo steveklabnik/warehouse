@@ -12,6 +12,7 @@ use serde_json::Value;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::collections::BTreeMap;
 
 /*
 {
@@ -38,12 +39,25 @@ use std::io::BufReader;
 }
 */
 
-struct TotallyNotADatabase(Version);
+struct TotallyNotADatabase(BTreeMap<String, Crate>);
+
+#[derive(Debug)]
+struct Crate {
+    id: String,
+    versions: BTreeMap<String, Version>,
+}
+
+impl Crate {
+    fn add_version(&mut self, v: Version) {
+        let name = v.id.clone();
+        self.versions.insert(name, v);
+    }
+}
 
 #[derive(Debug)]
 struct Version {
     id: String,
-    version: String,
+    crate_id: String,
     checksum: String,
     yanked: bool,
 }
@@ -52,14 +66,14 @@ impl Version {
     fn from_value(v: Value) -> Version {
         let obj = v.as_object().unwrap();
 
-        let id = obj.get("name").unwrap().as_string().unwrap().to_string();
-        let version = obj.get("vers").unwrap().as_string().unwrap().to_string();
+        let id = obj.get("vers").unwrap().as_string().unwrap().to_string();
+        let crate_id = obj.get("name").unwrap().as_string().unwrap().to_string();
         let checksum = obj.get("cksum").unwrap().as_string().unwrap().to_string();
         let yanked = obj.get("yanked").unwrap().as_boolean().unwrap();
 
         Version {
             id: id,
-            version: version,
+            crate_id: crate_id,
             checksum: checksum,
             yanked: yanked,
         }
@@ -75,8 +89,18 @@ lazy_static! {
         reader.read_line(&mut line).unwrap();
 
         let data: Value = serde_json::from_str(&line).unwrap();
+
+        let mut iron = Crate { id: String::from("iron"), versions: BTreeMap::new() };
+
+        let version = Version::from_value(data);
+
+        iron.add_version(version);
+
+        let mut db = BTreeMap::new();
+
+        db.insert(String::from("iron"), iron);
         
-        TotallyNotADatabase(Version::from_value(data))
+        TotallyNotADatabase(db)
     };
 }
 
@@ -96,5 +120,14 @@ fn index(_: &mut Request) -> IronResult<Response> {
 fn crates(_: &mut Request) -> IronResult<Response> {
     let data = &STORE.0;
 
-    Ok(Response::with((status::Ok, format!("{:?}", data))))
+    let mut json = String::from("{\"data\":[");
+
+    let crates = data.iter().map(|(_, krate)| {
+        format!("{{\"id\": \"{}\", \"type\":\"crate\"}}", krate.id)
+    }).collect::<Vec<String>>().join(",");
+
+    json.push_str(&crates);
+    json.push_str("]}");
+
+    Ok(Response::with((status::Ok, json)))
 }
