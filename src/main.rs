@@ -38,18 +38,18 @@ use std::io::BufReader;
 }
 */
 
-struct TotallyNotADatabase(Crate);
+struct TotallyNotADatabase(Version);
 
 #[derive(Debug)]
-struct Crate {
+struct Version {
     id: String,
     version: String,
     checksum: String,
     yanked: bool,
 }
 
-impl Crate {
-    fn from_value(v: Value) -> Crate {
+impl Version {
+    fn from_value(v: Value) -> Version {
         let obj = v.as_object().unwrap();
 
         let id = obj.get("name").unwrap().as_string().unwrap().to_string();
@@ -57,7 +57,7 @@ impl Crate {
         let checksum = obj.get("cksum").unwrap().as_string().unwrap().to_string();
         let yanked = obj.get("yanked").unwrap().as_boolean().unwrap();
 
-        Crate {
+        Version {
             id: id,
             version: version,
             checksum: checksum,
@@ -76,7 +76,7 @@ lazy_static! {
 
         let data: Value = serde_json::from_str(&line).unwrap();
         
-        TotallyNotADatabase(Crate::from_value(data))
+        TotallyNotADatabase(Version::from_value(data))
     };
 }
 
