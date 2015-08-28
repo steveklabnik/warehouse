@@ -88,9 +88,9 @@ fn main() {
 }
 
 fn index(_: &mut Request) -> IronResult<Response> {
-    let index = "{\"crates\": \"/crates\"}";
+    let index = String::from("{\"crates\": \"/crates\"}");
 
-    Ok(Response::with((status::Ok, String::from(index))))
+    Ok(Response::with((status::Ok, index)))
 }
 
 fn crates(_: &mut Request) -> IronResult<Response> {
