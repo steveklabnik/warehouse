@@ -6,3 +6,4 @@ authors = ["Steve Klabnik <steve@steveklabnik.com>"]
 [dependencies]
 iron = "0.1.21"
 router = "0.0.14"
+serde_json = "0.5.1"
