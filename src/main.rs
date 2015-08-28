@@ -1,3 +1,5 @@
+#![feature(fs_walk)]
+
 extern crate iron;
 #[macro_use]
 extern crate router;
@@ -16,9 +18,7 @@ mod version;
 use totally_not_a_database::TotallyNotADatabase;
 
 lazy_static! {
-    static ref STORE: TotallyNotADatabase = {
-        TotallyNotADatabase::from_path("crates.io-index/ir/on/iron")
-    };
+    static ref STORE: TotallyNotADatabase = { TotallyNotADatabase::new() };
 }
 
 fn main() {
