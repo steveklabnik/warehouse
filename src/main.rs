@@ -6,10 +6,12 @@ extern crate router;
 extern crate serde_json;
 #[macro_use]
 extern crate lazy_static;
+extern crate hyper;
 
 use router::Router;
 use iron::prelude::*;
 use iron::status;
+use hyper::header::AccessControlAllowOrigin;
 
 mod totally_not_a_database;
 mod krate;
@@ -25,7 +27,18 @@ fn main() {
     let router = router!(get "/" => index,
                          get "/crates" => crates);
 
-    Iron::new(router).http("localhost:3000").unwrap();
+    let mut chain = Chain::new(router);
+    chain.link_after(set_cors);
+
+
+    Iron::new(chain).http("localhost:3000").unwrap();
+}
+
+fn set_cors(_: &mut Request, mut res: Response) -> IronResult<Response> {
+    // lol
+    res.headers.set(AccessControlAllowOrigin::Any);
+
+    Ok(res)
 }
 
 fn index(_: &mut Request) -> IronResult<Response> {
