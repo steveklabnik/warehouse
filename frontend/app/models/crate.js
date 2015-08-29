@@ -1,5 +1,10 @@
 import DS from 'ember-data';
 
-export default DS.Model.extend({
-  versions: DS.hasMany('version'),
+const {
+  Model,
+  hasMany
+} = DS;
+
+export default Model.extend({
+   versions: hasMany('version'),
 });

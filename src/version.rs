@@ -4,6 +4,7 @@ use serde_json::Value;
 pub struct Version {
     pub id: String,
     pub crate_id: String,
+    pub name: String,
     pub checksum: String,
     pub yanked: bool,
 }
@@ -14,12 +15,14 @@ impl Version {
 
         let id = obj.get("vers").unwrap().as_string().unwrap().to_string();
         let crate_id = obj.get("name").unwrap().as_string().unwrap().to_string();
+        let name = id.clone();
         let checksum = obj.get("cksum").unwrap().as_string().unwrap().to_string();
         let yanked = obj.get("yanked").unwrap().as_boolean().unwrap();
 
         Version {
             id: id,
             crate_id: crate_id,
+            name: name,
             checksum: checksum,
             yanked: yanked,
         }

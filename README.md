@@ -10,6 +10,7 @@ Requires Rust nightly.
 Don’t forget that this has a submodule!
 
 ```bash
+$ git submodule update --init --recursive // first time
 $ git submodule update
 ```
 

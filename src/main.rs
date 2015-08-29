@@ -56,14 +56,28 @@ fn crates(_: &mut Request) -> IronResult<Response> {
             versions.push(version.clone());
         }
 
-        format!("{{\"id\": \"{}\", \"type\":\"crate\"}}", krate.id)
+        let krate_versions = krate.versions.iter().map(|(_, v)| {
+            let mut id = String::from("");
+            id.push_str(&krate.id);
+            id.push_str(&'-'.to_string());
+            id.push_str(&v.id);
+
+            format!("{{\"type\": \"version\",\"id\": \"{}\"}}", id)
+        }).collect::<Vec<_>>().join(",");
+
+        format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
     }).collect::<Vec<String>>().join(",");
 
     json.push_str(&crates);
     json.push_str("],\"included\":[");
 
     let included = versions.iter().map(|v| {
-        format!("{{\"type\": \"version\",\"id\": \"{}\", \"crate-id\": \"{}\"}}", v.id, v.crate_id)
+        let mut id = String::from("");
+        id.push_str(&v.crate_id);
+        id.push_str(&'-'.to_string());
+        id.push_str(&v.id);
+
+        format!("{{\"type\": \"version\",\"id\": \"{}\", \"crate-id\": \"{}\", \"attributes\": {{\"name\": \"{}\"}}}}", id, v.crate_id, v.id)
     }).collect::<Vec<_>>().join(",");
 
     json.push_str(&included);
