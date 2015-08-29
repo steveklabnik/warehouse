@@ -5,6 +5,8 @@ This project serves up the index for Crates.io.
 This is mostly a fun hack and also a yak of mine. Not ready to be put anywhere
 on the web. Yet. Iron on the backend, Ember on the front.
 
+Requires Rust nightly.
+
 ## Backend
 
 To start up the backend:
