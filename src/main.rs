@@ -28,17 +28,14 @@ fn main() {
                          get "/crates" => crates);
 
     let mut chain = Chain::new(router);
-    chain.link_after(set_cors);
+    chain.link_after(|_: &mut Request, mut res: Response| {
+        // lol
+        res.headers.set(AccessControlAllowOrigin::Any);
 
+        Ok(res)
+    });
 
     Iron::new(chain).http("localhost:3000").unwrap();
-}
-
-fn set_cors(_: &mut Request, mut res: Response) -> IronResult<Response> {
-    // lol
-    res.headers.set(AccessControlAllowOrigin::Any);
-
-    Ok(res)
 }
 
 fn index(_: &mut Request) -> IronResult<Response> {
