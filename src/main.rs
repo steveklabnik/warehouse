@@ -49,15 +49,24 @@ fn crates(_: &mut Request) -> IronResult<Response> {
 
     let mut json = String::from("{\"data\":[");
 
-    let crates = data.iter().map(|(_, krate)| {
-        let versions = krate.versions.iter().map(|(_, v)| {
-            format!("{{\"type\": \"version\",\"id\": \"{}\"}}", v.id)
-        }).collect::<Vec<_>>().join(",");
+    let mut versions = Vec::new();
 
-        format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, versions)
+    let crates = data.iter().map(|(_, krate)| {
+        for (_, version) in &krate.versions {
+            versions.push(version.clone());
+        }
+
+        format!("{{\"id\": \"{}\", \"type\":\"crate\"}}", krate.id)
     }).collect::<Vec<String>>().join(",");
 
     json.push_str(&crates);
+    json.push_str("],\"included\":[");
+
+    let included = versions.iter().map(|v| {
+        format!("{{\"type\": \"version\",\"id\": \"{}\", \"crate-id\": \"{}\"}}", v.id, v.crate_id)
+    }).collect::<Vec<_>>().join(",");
+
+    json.push_str(&included);
     json.push_str("]}");
 
     Ok(Response::with((status::Ok, json)))
