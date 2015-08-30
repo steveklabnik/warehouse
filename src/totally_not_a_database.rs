@@ -42,12 +42,9 @@ impl TotallyNotADatabase {
                 let name = data.as_object().unwrap().get("name").unwrap().as_string().unwrap().to_string();
                 let version = Version::from_value(data);
 
-                // TODO: look up the existing crate instead of just making a new one
-                let mut krate = Crate { id: name.clone(), versions: BTreeMap::new() };
-
+                let krate = db.entry(name.clone()).or_insert(Crate { id: name.clone(), versions: BTreeMap::new() });
+                info!("Adding version {} to crate {}", version.id, name);
                 krate.add_version(version);
-
-                db.insert(name, krate);
             }
         }
         
