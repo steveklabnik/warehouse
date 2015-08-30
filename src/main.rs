@@ -27,6 +27,9 @@ fn main() {
     let router = router!(get "/" => index,
                          get "/crates" => crates);
 
+    // let's not be lazy! (Load the data at startup, rather than on the first request
+    &STORE.0; 
+
     let mut chain = Chain::new(router);
     chain.link_after(|_: &mut Request, mut res: Response| {
         // lol
