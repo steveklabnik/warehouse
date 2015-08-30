@@ -22,6 +22,12 @@ To start up the backend:
 $ cargo run
 ```
 
+To see logging output:
+
+```bash
+$ RUST_LOG=warehouse=info cargo run
+```
+
 ## Frontend
 
 To start up the frontend:

@@ -8,6 +8,10 @@ extern crate serde_json;
 extern crate lazy_static;
 extern crate hyper;
 
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+
 use router::Router;
 use iron::prelude::*;
 use iron::status;
@@ -24,11 +28,16 @@ lazy_static! {
 }
 
 fn main() {
+    env_logger::init().unwrap();
+    info!("Starting server");
+
     let router = router!(get "/" => index,
                          get "/crates" => crates);
 
+    info!("Initializing data...");
     // let's not be lazy! (Load the data at startup, rather than on the first request
     &STORE.0; 
+    info!("Data loaded");
 
     let mut chain = Chain::new(router);
     chain.link_after(|_: &mut Request, mut res: Response| {
@@ -38,16 +47,19 @@ fn main() {
         Ok(res)
     });
 
+    info!("Server starting on http://localhost:3000");
     Iron::new(chain).http("localhost:3000").unwrap();
 }
 
 fn index(_: &mut Request) -> IronResult<Response> {
+    info!("REQUEST: /");
     let index = String::from("{\"crates\": \"/crates\"}");
 
     Ok(Response::with((status::Ok, index)))
 }
 
 fn crates(_: &mut Request) -> IronResult<Response> {
+    info!("REQUEST: /crates");
     let data = &STORE.0;
 
     let mut json = String::from("{\"data\":[");
