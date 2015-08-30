@@ -32,19 +32,19 @@ impl TotallyNotADatabase {
                 if bad_entry(&entry) { continue; }
 
                 let f = File::open(entry.path()).unwrap();
-                let mut reader = BufReader::new(f);
+                let reader = BufReader::new(f);
 
-                let mut line = String::new();
-                reader.read_line(&mut line).unwrap();
+                for line in reader.lines() {
+                    let line = line.unwrap();
+                    let data: Value = serde_json::from_str(&line).unwrap();
 
-                let data: Value = serde_json::from_str(&line).unwrap();
+                    let name = data.as_object().unwrap().get("name").unwrap().as_string().unwrap().to_string();
+                    let version = Version::from_value(data);
 
-                let name = data.as_object().unwrap().get("name").unwrap().as_string().unwrap().to_string();
-                let version = Version::from_value(data);
-
-                let krate = db.entry(name.clone()).or_insert(Crate { id: name.clone(), versions: BTreeMap::new() });
-                info!("Adding version {} to crate {}", version.id, name);
-                krate.add_version(version);
+                    let krate = db.entry(name.clone()).or_insert(Crate { id: name.clone(), versions: BTreeMap::new() });
+                    info!("Adding version {} to crate {}", version.id, name);
+                    krate.add_version(version);
+                }
             }
         }
         
