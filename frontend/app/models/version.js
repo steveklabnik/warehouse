@@ -1,5 +1,13 @@
 import DS from 'ember-data';
 
-export default DS.Model.extend({
-  crate: DS.belongsTo('crate'),
+const {
+  Model,
+  attr,
+  belongsTo
+} = DS;
+
+export default Model.extend({
+  name: attr('string'),
+
+  crate: belongsTo("crate"),
 });
