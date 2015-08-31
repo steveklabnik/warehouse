@@ -1,9 +1,14 @@
 #![feature(fs_walk)]
+#![feature(custom_derive)]
+#![feature(custom_attribute)]
+#![feature(plugin)]
+#![plugin(serde_macros)]
+extern crate serde;
+extern crate serde_json;
 
 extern crate iron;
 #[macro_use]
 extern crate router;
-extern crate serde_json;
 
 #[macro_use]
 extern crate log;
@@ -29,6 +34,7 @@ fn main() {
 
     let router = router!(get "/" => index,
                          get "/crates" => crates,
+                         get "/test" => test,
                          get "/crates/:id" => crates);
 
     info!("Initializing data...");
@@ -60,6 +66,15 @@ fn index(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, r#"{"crates": "crates"}"#)))
 }
 
+fn test(req: &mut Request) -> IronResult<Response> {
+    let ref data = req.get::<Read<TotallyNotADatabase>>().unwrap().0;
+    let krate = data.iter().next().unwrap().1;
+    let version = krate.versions.iter().next().unwrap().1;
+
+    let json = serde_json::to_string(&version).unwrap();
+    Ok(Response::with((status::Ok, json)))
+}
+
 fn crates(req: &mut Request) -> IronResult<Response> {
     let ref data = req.get::<Read<TotallyNotADatabase>>().unwrap().0;
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap_or("");
@@ -75,9 +90,7 @@ fn crates(req: &mut Request) -> IronResult<Response> {
             let krate_versions = krate.versions.iter().map(|(_, v)| {
                 versions.push(v.clone());
 
-                let id = format!("{}-{}", krate.id, v.id);
-
-                format!("{{\"type\": \"version\",\"id\": \"{}\"}}", id)
+                serde_json::to_string(&v).unwrap()
             }).collect::<Vec<_>>().join(",");
 
             format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
