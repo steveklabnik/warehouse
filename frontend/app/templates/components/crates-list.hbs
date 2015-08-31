@@ -1,0 +1,12 @@
+{{page-numbers content=pagedContent}}
+
+{{#each pagedContent as |crate|}}
+  <h2>
+    {{#link-to 'crate' crate}}
+      {{crate.id}}
+    {{/link-to}}
+    ({{crate.currentVersion.name}})
+  </h2>
+{{/each}}
+
+{{page-numbers content=pagedContent}}

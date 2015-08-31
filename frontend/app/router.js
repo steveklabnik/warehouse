@@ -7,6 +7,7 @@ var Router = Ember.Router.extend({
 
 Router.map(function() {
   this.route('crates');
+  this.route('crate', { path: ':crate_id' });
 });
 
 export default Router;

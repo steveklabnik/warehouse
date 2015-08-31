@@ -1,8 +1,1 @@
-{{#each model as |crate|}}
-  <h2>{{crate.id}}</h2>
-  <ul>
-  {{#each crate.versions as |version|}}
-    <li><strong>Version:</strong> {{version.name}}</li>
-  {{/each}}
-  </ul>
-{{/each}}
+{{crates-list crates=model page=page}}
