@@ -4,28 +4,23 @@ extern crate iron;
 #[macro_use]
 extern crate router;
 extern crate serde_json;
-#[macro_use]
-extern crate lazy_static;
-extern crate hyper;
 
 #[macro_use]
 extern crate log;
 extern crate env_logger;
 
-use router::Router;
+extern crate persistent;
+
 use iron::prelude::*;
 use iron::status;
-use hyper::header::AccessControlAllowOrigin;
+use iron::headers::AccessControlAllowOrigin;
+use persistent::Read;
 
 mod totally_not_a_database;
 mod krate;
 mod version;
 
 use totally_not_a_database::TotallyNotADatabase;
-
-lazy_static! {
-    static ref STORE: TotallyNotADatabase = { TotallyNotADatabase::new() };
-}
 
 fn main() {
     env_logger::init().unwrap();
@@ -36,11 +31,19 @@ fn main() {
                          get "/crates/:id" => crates);
 
     info!("Initializing data...");
-    // let's not be lazy! (Load the data at startup, rather than on the first request
-    &STORE.0;
+    let data = TotallyNotADatabase::new();
     info!("Data loaded");
 
     let mut chain = Chain::new(router);
+
+    chain.link(Read::<TotallyNotADatabase>::both(data));
+
+    chain.link_before(|req: &mut Request| {
+        // Basic logging of requests.
+        info!("REQUEST: {}", req.url.path.join("/"));
+        Ok(())
+    });
+
     chain.link_after(|_: &mut Request, mut res: Response| {
         // lol
         res.headers.set(AccessControlAllowOrigin::Any);
@@ -53,10 +56,7 @@ fn main() {
 }
 
 fn index(_: &mut Request) -> IronResult<Response> {
-    info!("REQUEST: /");
-    let index = String::from("{\"crates\": \"/crates\"}");
-
-    Ok(Response::with((status::Ok, index)))
+    Ok(Response::with((status::Ok, r#"{"crates": "crates"}"#)))
 }
 
 fn crates(req: &mut Request) -> IronResult<Response> {
@@ -68,7 +68,7 @@ fn crates(req: &mut Request) -> IronResult<Response> {
         info!("REQUEST: /crates/{}", id);
     }
 
-    let data = &STORE.0;
+    let data = &req.get_ref::<Read<TotallyNotADatabase>>().unwrap().0;
 
     let mut json = String::from("{\"data\":");
 
