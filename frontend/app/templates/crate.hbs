@@ -1,0 +1,9 @@
+<h2>
+  {{model.id}} ({{model.currentVersion.name}})
+</h2>
+Versions:
+<ul>
+  {{#each model.sortedVersions as |version|}}
+    <li>{{version.name}}</li>
+  {{/each}}
+</ul>

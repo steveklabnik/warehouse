@@ -14,6 +14,7 @@ extern crate persistent;
 use iron::prelude::*;
 use iron::status;
 use iron::headers::AccessControlAllowOrigin;
+use router::Router;
 use persistent::Read;
 
 mod totally_not_a_database;
@@ -27,7 +28,8 @@ fn main() {
     info!("Starting server");
 
     let router = router!(get "/" => index,
-                         get "/crates" => crates);
+                         get "/crates" => crates,
+                         get "/crates/:id" => crates);
 
     info!("Initializing data...");
     let data = TotallyNotADatabase::new();
@@ -59,37 +61,51 @@ fn index(_: &mut Request) -> IronResult<Response> {
 }
 
 fn crates(req: &mut Request) -> IronResult<Response> {
-    let data = &req.get_ref::<Read<TotallyNotADatabase>>().unwrap().0;
+    let ref data = req.get::<Read<TotallyNotADatabase>>().unwrap().0;
+    let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap_or("");
 
-    let mut json = String::from("{\"data\":[");
+    let mut json = String::from("{\"data\":");
 
     let mut versions = Vec::new();
 
-    let crates = data.iter().map(|(_, krate)| {
-        for (_, version) in &krate.versions {
-            versions.push(version.clone());
-        }
+    let crates;
+
+    if id.is_empty() {
+        crates = data.iter().map(|(_, krate)| {
+            let krate_versions = krate.versions.iter().map(|(_, v)| {
+                versions.push(v.clone());
+
+                let id = format!("{}-{}", krate.id, v.id);
+
+                format!("{{\"type\": \"version\",\"id\": \"{}\"}}", id)
+            }).collect::<Vec<_>>().join(",");
+
+            format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
+        }).collect::<Vec<String>>().join(",");
+    } else {
+        let krate = data.get(id.clone()).unwrap();
 
         let krate_versions = krate.versions.iter().map(|(_, v)| {
-            let mut id = String::from("");
-            id.push_str(&krate.id);
-            id.push_str(&'-'.to_string());
-            id.push_str(&v.id);
+            versions.push(v.clone());
+
+            let id = format!("{}-{}", krate.id, v.id);
 
             format!("{{\"type\": \"version\",\"id\": \"{}\"}}", id)
         }).collect::<Vec<_>>().join(",");
 
-        format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
-    }).collect::<Vec<String>>().join(",");
+        crates = format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions);
+    }
 
-    json.push_str(&crates);
-    json.push_str("],\"included\":[");
+    if id.is_empty() {
+        json.push_str(&format!("[{}]", crates));
+    } else {
+        json.push_str(&crates);
+    }
+
+    json.push_str(",\"included\":[");
 
     let included = versions.iter().map(|v| {
-        let mut id = String::from("");
-        id.push_str(&v.crate_id);
-        id.push_str(&'-'.to_string());
-        id.push_str(&v.id);
+        let id = format!("{}-{}", v.crate_id, v.id);
 
         format!("{{\"type\": \"version\",\"id\": \"{}\", \"crate-id\": \"{}\", \"attributes\": {{\"name\": \"{}\"}}}}", id, v.crate_id, v.id)
     }).collect::<Vec<_>>().join(",");
