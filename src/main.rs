@@ -14,6 +14,7 @@ extern crate persistent;
 use iron::prelude::*;
 use iron::status;
 use iron::headers::AccessControlAllowOrigin;
+use router::Router;
 use persistent::Read;
 
 mod totally_not_a_database;
@@ -60,15 +61,8 @@ fn index(_: &mut Request) -> IronResult<Response> {
 }
 
 fn crates(req: &mut Request) -> IronResult<Response> {
-    let id = req.extensions.get::<Router>().unwrap().find("id").unwrap_or("");
-
-    if id.is_empty() {
-        info!("REQUEST: /crates");
-    } else {
-        info!("REQUEST: /crates/{}", id);
-    }
-
-    let data = &req.get_ref::<Read<TotallyNotADatabase>>().unwrap().0;
+    let ref data = req.get::<Read<TotallyNotADatabase>>().unwrap().0;
+    let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap_or("");
 
     let mut json = String::from("{\"data\":");
 
@@ -89,7 +83,7 @@ fn crates(req: &mut Request) -> IronResult<Response> {
             format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
         }).collect::<Vec<String>>().join(",");
     } else {
-        let krate = data.get(id).unwrap();
+        let krate = data.get(id.clone()).unwrap();
 
         let krate_versions = krate.versions.iter().map(|(_, v)| {
             versions.push(v.clone());
