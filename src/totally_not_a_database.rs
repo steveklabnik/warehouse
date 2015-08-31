@@ -8,7 +8,11 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
+use iron::typemap::Key;
+
 pub struct TotallyNotADatabase(pub BTreeMap<String, Crate>);
+
+impl Key for TotallyNotADatabase { type Value = TotallyNotADatabase; }
 
 fn bad_entry(entry: &fs::DirEntry) -> bool {
     let bad_paths = ["crates.io-index/config.json", "crates.io-index/.git"];
@@ -47,7 +51,7 @@ impl TotallyNotADatabase {
                 }
             }
         }
-        
+
         TotallyNotADatabase(db)
     }
 }

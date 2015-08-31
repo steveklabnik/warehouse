@@ -4,10 +4,9 @@ version = "0.1.0"
 authors = ["Steve Klabnik <steve@steveklabnik.com>"]
 
 [dependencies]
-iron = "0.1.21"
-router = "0.0.14"
-lazy_static = "0.1.14"
+iron = "0.2"
+router = "0.0.15"
 serde_json = "0.5.1"
-hyper = "0.6.11"
 log = "0.3.2"
 env_logger = "0.3.1"
+persistent = "0.0.6"
