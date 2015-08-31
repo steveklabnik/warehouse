@@ -1,8 +1,11 @@
 use serde_json::Value;
 
-#[derive(Debug)]
+#[derive(Debug,Serialize)]
 pub struct Version {
     pub id: String,
+    #[serde(rename="type")]
+    pub typelol: String,
+    #[serde(rename="crate-id")]
     pub crate_id: String,
     pub name: String,
     pub checksum: String,
@@ -20,7 +23,8 @@ impl Version {
         let yanked = obj.get("yanked").unwrap().as_boolean().unwrap();
 
         Version {
-            id: id,
+            id: crate_id.clone() + "-" + &id,
+            typelol: String::from("version"),
             crate_id: crate_id,
             name: name,
             checksum: checksum,
