@@ -6,6 +6,7 @@ var Router = Ember.Router.extend({
 });
 
 Router.map(function() {
+  this.route('index', { path: '/' });
   this.route('crates');
   this.route('crate', { path: ':crate_id' });
 });
