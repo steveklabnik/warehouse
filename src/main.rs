@@ -77,10 +77,14 @@ fn crates(req: &mut Request) -> IronResult<Response> {
 
                 let id = format!("{}-{}", krate.id, v.id);
 
-                format!("{{\"type\": \"version\",\"id\": \"{}\"}}", id)
-            }).collect::<Vec<_>>().join(",");
+                let deps = v.dependencies.iter().map(|(_, d)| {
+                    format!("{{\"type\": \"dependency\", \"id\": \"{}\"}}", d.id)
+                }).collect::<Vec<_>>().join(",");
 
-            format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
+                format!("{{\"type\": \"version\",\"id\": \"{}\",\"relationships\": {{\"dependencies\": {{\"data\": [{}]}}}}}}", id, deps)
+                }).collect::<Vec<_>>().join(",");
+
+                format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions)
         }).collect::<Vec<String>>().join(",");
     } else {
         let krate = data.get(id.clone()).unwrap();
@@ -90,7 +94,11 @@ fn crates(req: &mut Request) -> IronResult<Response> {
 
             let id = format!("{}-{}", krate.id, v.id);
 
-            format!("{{\"type\": \"version\",\"id\": \"{}\"}}", id)
+            let deps = v.dependencies.iter().map(|(_, d)| {
+                format!("{{\"type\": \"dependency\", \"id\": \"{}\"}}", d.id)
+            }).collect::<Vec<_>>().join(",");
+
+            format!("{{\"type\": \"version\",\"id\": \"{}\",\"relationships\": {{\"dependencies\": {{\"data\": [{}]}}}}}}", id, deps)
         }).collect::<Vec<_>>().join(",");
 
         crates = format!("{{\"id\": \"{}\", \"type\":\"crate\",\"relationships\": {{\"versions\": {{\"data\": [{}]}}}}}}", krate.id, krate_versions);
@@ -104,13 +112,25 @@ fn crates(req: &mut Request) -> IronResult<Response> {
 
     json.push_str(",\"included\":[");
 
-    let included = versions.iter().map(|v| {
+    let included_versions = versions.iter().map(|v| {
         let id = format!("{}-{}", v.crate_id, v.id);
 
         format!("{{\"type\": \"version\",\"id\": \"{}\", \"crate-id\": \"{}\", \"attributes\": {{\"name\": \"{}\"}}}}", id, v.crate_id, v.id)
     }).collect::<Vec<_>>().join(",");
 
-    json.push_str(&included);
+    json.push_str(&included_versions);
+
+    json.push_str(",");
+
+    let mut included_dependencies = vec![];
+    for &version in versions.iter() {
+        for (_, d) in version.dependencies.iter() {
+            included_dependencies.push(format!("{{\"type\": \"dependency\",\"id\": \"{}\", \"version-id\": \"{}\", \"attributes\": {{\"name\": \"{}\",\"requirement\":\"{}\",\"optional\":{}}}}}", d.id, version.id, d.name, d.requirement, d.optional))
+        }
+    }
+
+    json.push_str(&(included_dependencies.join(",")));
+
     json.push_str("]}");
 
     Ok(Response::with((status::Ok, json)))

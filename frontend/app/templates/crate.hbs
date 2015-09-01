@@ -4,6 +4,13 @@
 Versions:
 <ul>
   {{#each model.sortedVersions as |version|}}
-    <li>{{version.name}}</li>
+    <li>{{version.name}}
+      Deps:
+      <ul>
+        {{#each version.dependencies as |dep|}}
+          <li>{{dep.id}}</li> 
+        {{/each}}
+      </ul>
+    </li>
   {{/each}}
 </ul>
