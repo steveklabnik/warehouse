@@ -115,7 +115,7 @@ fn crates(req: &mut Request) -> IronResult<Response> {
     let included_versions = versions.iter().map(|v| {
         let id = format!("{}-{}", v.crate_id, v.id);
 
-        format!("{{\"type\": \"version\",\"id\": \"{}\", \"crate-id\": \"{}\", \"attributes\": {{\"name\": \"{}\"}}}}", id, v.crate_id, v.id)
+        format!("{{\"type\": \"version\",\"id\": \"{}\", \"attributes\": {{\"crate-id\": \"{}\",\"name\": \"{}\"}}}}", id, v.crate_id, v.id)
     }).collect::<Vec<_>>().join(",");
 
     json.push_str(&included_versions);
@@ -125,7 +125,7 @@ fn crates(req: &mut Request) -> IronResult<Response> {
     let mut included_dependencies = vec![];
     for &version in versions.iter() {
         for (_, d) in version.dependencies.iter() {
-            included_dependencies.push(format!("{{\"type\": \"dependency\",\"id\": \"{}\", \"version-id\": \"{}\", \"attributes\": {{\"name\": \"{}\",\"requirement\":\"{}\",\"optional\":{}}}}}", d.id, version.id, d.name, d.requirement, d.optional))
+            included_dependencies.push(format!("{{\"type\": \"dependency\",\"id\": \"{}\",\"attributes\": {{ \"version-id\": \"{}\", \"name\": \"{}\",\"requirement\":\"{}\",\"optional\":{}}}}}", d.id, format!("{}-{}", version.crate_id, version.id), d.name, d.requirement, d.optional))
         }
     }
 

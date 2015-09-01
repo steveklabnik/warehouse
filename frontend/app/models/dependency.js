@@ -5,4 +5,5 @@ export default DS.Model.extend({
   requirement: DS.attr('string'),
   optional: DS.attr('boolean'),
   versions: DS.belongsTo('version'),
+  dependencies: DS.hasMany('dependency'),
 });
