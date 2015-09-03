@@ -1,5 +1,3 @@
-#![feature(fs_walk)]
-
 extern crate iron;
 #[macro_use]
 extern crate router;
@@ -11,17 +9,22 @@ extern crate env_logger;
 
 extern crate persistent;
 
+extern crate crates_index;
+
 use iron::prelude::*;
 use iron::status;
 use iron::headers::AccessControlAllowOrigin;
-use router::Router;
 use persistent::Read;
 
-mod totally_not_a_database;
-mod krate;
-mod version;
+use crates_index::CratesIndex;
 
-use totally_not_a_database::TotallyNotADatabase;
+use iron::typemap::Key;
+
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+struct Index(HashMap<String, Vec<String>>);
+impl Key for Index { type Value = HashMap<String, Vec<String>>; }
 
 fn main() {
     env_logger::init().unwrap();
@@ -32,12 +35,12 @@ fn main() {
                          get "/crates/:id" => crates);
 
     info!("Initializing data...");
-    let data = TotallyNotADatabase::new();
+    let data = CratesIndex::new(PathBuf::from("crates.io-index")).dependency_map();
     info!("Data loaded");
 
     let mut chain = Chain::new(router);
 
-    chain.link(Read::<TotallyNotADatabase>::both(data));
+    chain.link(Read::<Index>::both(data));
 
     chain.link_before(|req: &mut Request| {
         // Basic logging of requests.
@@ -61,7 +64,10 @@ fn index(_: &mut Request) -> IronResult<Response> {
 }
 
 fn crates(req: &mut Request) -> IronResult<Response> {
-    let ref data = req.get::<Read<TotallyNotADatabase>>().unwrap().0;
+    let ref data = req.get::<Read<Index>>().unwrap();
+    println!("{:#?}", data);
+    return Ok(Response::with((status::Ok, r#"{"crates": "crates"}"#)));
+    /*
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap_or("");
 
     let mut json = String::from("{\"data\":");
@@ -134,4 +140,5 @@ fn crates(req: &mut Request) -> IronResult<Response> {
     json.push_str("]}");
 
     Ok(Response::with((status::Ok, json)))
+    */
 }
